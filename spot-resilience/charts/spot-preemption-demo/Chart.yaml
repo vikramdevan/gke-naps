@@ -1,0 +1,12 @@
+apiVersion: v2
+name: spot-preemption-demo
+description: A Helm chart demonstrating GKE Spot VM preemption and zero-downtime graceful workload migration
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - gke
+  - spot-vm
+  - preemption
+  - graceful-shutdown
+  - pdb

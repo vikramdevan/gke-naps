@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: resilient-web
+  labels:
+    app: resilient-web
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: resilient-web
+  template:
+    metadata:
+      labels:
+        app: resilient-web
+    spec:
+      # Spread replicas across distinct Spot VM nodes so one preemption event
+      # never impacts both replicas simultaneously
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            app: resilient-web
+
+      # Give the container 20 seconds to complete in-flight transactions
+      # Fits comfortably within Google Cloud's 25-second Spot notice window
+      terminationGracePeriodSeconds: 20
+
+      containers:
+      - name: web
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 250m
+            memory: 256Mi
+
+        # The preStop hook runs immediately when GKE initiates eviction (via SIGTERM).
+        # It allows in-flight traffic to drain before Nginx stops accepting connections.
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - "/bin/sh"
+              - "-c"
+              - "echo 'GKE Spot preemption notice received! Starting graceful drain...' && sleep 10 && nginx -s quit"
+
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 2
+          periodSeconds: 3
+
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: resilient-web
+  labels:
+    app: resilient-web
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 80
+    name: http
+  selector:
+    app: resilient-web

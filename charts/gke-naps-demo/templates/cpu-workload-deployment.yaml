@@ -1,0 +1,29 @@
+{{- if .Values.cpuWorkload.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "gke-naps-demo.fullname" . }}-cpu-workload
+  labels:
+    {{- include "gke-naps-demo.labels" . | nindent 4 }}
+    app.kubernetes.io/component: cpu-workload
+spec:
+  replicas: {{ .Values.cpuWorkload.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: cpu-workload
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: cpu-workload
+    spec:
+      containers:
+      - name: compute-task
+        image: "{{ .Values.cpuWorkload.image.repository }}:{{ .Values.cpuWorkload.image.tag }}"
+        imagePullPolicy: {{ .Values.cpuWorkload.image.pullPolicy }}
+        {{- if .Values.cpuWorkload.command }}
+        command:
+          {{- toYaml .Values.cpuWorkload.command | nindent 10 }}
+        {{- end }}
+        resources:
+          {{- toYaml .Values.cpuWorkload.resources | nindent 10 }}
+{{- end }}

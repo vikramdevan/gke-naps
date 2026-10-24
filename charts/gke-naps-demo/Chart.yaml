@@ -1,0 +1,13 @@
+apiVersion: v2
+name: gke-naps-demo
+description: A Helm chart for demonstrating GKE Node Auto-Provisioning (NAP) capabilities
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - gke
+  - autoscaling
+  - node-auto-provisioning
+  - nap
+maintainers:
+  - name: Demo Admin

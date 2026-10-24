@@ -1,0 +1,32 @@
+# ==============================================================================
+# GKE Cluster Infrastructure Configuration (Declarative Flags Specification)
+#
+# This file provides declarative configuration for provisioning the GKE cluster
+# with Node Auto-Provisioning (NAP) enabled and strict cost-optimization rules.
+#
+# Provision command:
+#   gcloud container clusters create naps-demo-cluster --flags-file=infra/cluster-config.yaml
+# ==============================================================================
+
+# Target GCP Project and Location
+--project: "gke-naps"
+--zone: "us-central1-c"
+
+# Baseline Node Pool (1 Spot VM of e2-standard-2)
+# Saves 60-91% on compute costs for personal test accounts
+--num-nodes: 1
+--machine-type: "e2-standard-2"
+--spot: true
+
+# Node Auto-Provisioning (NAP) Settings
+--enable-autoprovisioning: true
+
+# Cluster-wide resource limits for auto-provisioned pools (Safety bounds)
+--min-cpu: 1
+--max-cpu: 8
+--min-memory: 2
+--max-memory: 32
+
+# Cloud API scopes granted to auto-provisioned nodes
+--autoprovisioning-scopes:
+  - "https://www.googleapis.com/auth/cloud-platform"

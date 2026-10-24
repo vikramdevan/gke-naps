@@ -1,0 +1,93 @@
+# ==============================================================================
+# GKE Node Auto-Provisioning (NAP) Demo - Helm Chart Configuration
+#
+# Use this values file to control and document the workloads used to test
+# dynamic node pool creation.
+# ==============================================================================
+
+# Scenario 1: Baseline Workload
+# Runs on the initial default node pool without triggering any scale-up.
+baselineWorkload:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: nginx
+    tag: alpine
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+
+# Scenario 2: High CPU Workload (Triggers NAP Node Pool Creation)
+# Requests 3000m CPU. Because the default e2-standard-2 node has only ~1.8 vCPU
+# allocatable, GKE NAP dynamically creates a new node pool (e.g. e2-standard-4).
+cpuWorkload:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: busybox
+    tag: "1.36"
+    pullPolicy: IfNotPresent
+  command: ["sh", "-c", "echo 'Running on a dynamically provisioned high-CPU node pool!'; sleep 3600"]
+  resources:
+    requests:
+      cpu: 3000m
+      memory: 4Gi
+    limits:
+      cpu: 3000m
+      memory: 4Gi
+
+# Scenario 3: Tainted / Isolated Workload (Triggers NAP Tainted Node Pool)
+# Workload specifying a custom toleration and nodeSelector.
+# GKE NAP dynamically creates a dedicated, tainted node pool matching these tags.
+taintedWorkload:
+  enabled: false
+  replicaCount: 1
+  image:
+    repository: busybox
+    tag: "1.36"
+    pullPolicy: IfNotPresent
+  command: ["sh", "-c", "echo 'Running on a dedicated tainted node pool created by NAP!'; sleep 3600"]
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  nodeSelector:
+    workload-type: batch-analytics
+  tolerations:
+    - key: "workload-type"
+      operator: "Equal"
+      value: "batch-analytics"
+      effect: "NoSchedule"
+
+# Scenario 4: Dedicated Spot VM Workload
+# Directly targets Spot VM instances via GKE spot label.
+spotWorkload:
+  enabled: false
+  replicaCount: 1
+  image:
+    repository: busybox
+    tag: "1.36"
+    pullPolicy: IfNotPresent
+  command: ["sh", "-c", "echo 'Running on a dynamically created Spot node pool!'; sleep 3600"]
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  nodeSelector:
+    cloud.google.com/gke-spot: "true"
+  tolerations:
+    - key: "cloud.google.com/gke-spot"
+      operator: "Equal"
+      value: "true"
+      effect: "NoSchedule"

@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nap-tainted-workload
+  labels:
+    app: nap-tainted-workload
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nap-tainted-workload
+  template:
+    metadata:
+      labels:
+        app: nap-tainted-workload
+    spec:
+      # Request a specific node label and toleration.
+      # GKE Node Auto-Provisioning automatically creates a new isolated node pool
+      # stamped with this taint and label!
+      nodeSelector:
+        workload-type: batch-analytics
+      tolerations:
+      - key: "workload-type"
+        operator: "Equal"
+        value: "batch-analytics"
+        effect: "NoSchedule"
+      containers:
+      - name: batch-worker
+        image: busybox:1.36
+        command: ["sh", "-c", "echo 'Dedicated tainted node pool provisioned by NAP!'; sleep 3600"]
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "512Mi"
+          limits:
+            cpu: "1000m"
+            memory: "1Gi"

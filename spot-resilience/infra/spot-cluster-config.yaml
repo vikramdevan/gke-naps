@@ -1,0 +1,27 @@
+# ==============================================================================
+# GKE Cluster Infrastructure Configuration for Spot VM Preemption Demo
+#
+# Provisions a cost-optimized cluster with 2 Spot nodes so pods have target
+# Spot nodes to migrate to when a VM preemption event occurs.
+#
+# Provision command:
+#   gcloud container clusters create spot-demo-cluster --flags-file=spot-resilience/infra/spot-cluster-config.yaml
+# ==============================================================================
+
+# Target GCP Project and Location
+--project: "gke-naps"
+--zone: "us-central1-c"
+
+# Spot Node Pool: 2 nodes of e2-medium (keeps hourly cost under $0.03 total)
+--num-nodes: 2
+--machine-type: "e2-medium"
+--spot: true
+
+# Enable autoscaling on the Spot pool so it can replace preempted nodes automatically
+--enable-autoscaling: true
+--min-nodes: 2
+--max-nodes: 4
+
+# API scopes
+--scopes:
+  - "https://www.googleapis.com/auth/cloud-platform"

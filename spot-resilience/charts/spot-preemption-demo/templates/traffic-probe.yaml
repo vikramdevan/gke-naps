@@ -1,0 +1,55 @@
+{{- if .Values.trafficProbe.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "spot-preemption-demo.fullname" . }}-probe
+  labels:
+    {{- include "spot-preemption-demo.labels" . | nindent 4 }}
+    app.kubernetes.io/component: traffic-probe
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "spot-preemption-demo.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: traffic-probe
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "spot-preemption-demo.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: traffic-probe
+    spec:
+      containers:
+      - name: curl-probe
+        image: "{{ .Values.trafficProbe.image.repository }}:{{ .Values.trafficProbe.image.tag }}"
+        command:
+        - "sh"
+        - "-c"
+        - |
+          echo "Connecting continuous probe to http://{{ include "spot-preemption-demo.fullname" . }}-web:{{ .Values.service.port }}..."
+          SUCCESS=0
+          FAIL=0
+          TOTAL=0
+          while true; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 --max-time 3 http://{{ include "spot-preemption-demo.fullname" . }}-web:{{ .Values.service.port }} || echo "ERR")
+            TOTAL=$((TOTAL + 1))
+            if [ "$HTTP_CODE" = "200" ]; then
+              SUCCESS=$((SUCCESS + 1))
+              if [ $((TOTAL % 25)) -eq 0 ]; then
+                echo "[PROBE] Total: $TOTAL | Success (200 OK): $SUCCESS | Failures: $FAIL"
+              fi
+            else
+              FAIL=$((FAIL + 1))
+              echo "[PROBE WARNING] Request failed! HTTP Code: $HTTP_CODE | Total Failed: $FAIL"
+            fi
+            sleep {{ .Values.trafficProbe.intervalSeconds }}
+          done
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 100m
+            memory: 128Mi
+{{- end }}

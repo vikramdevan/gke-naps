@@ -1,0 +1,22 @@
+# ==============================================================================
+# GKE CoreDNS / kube-dns Autoscaler Configuration for Demo Clusters
+#
+# By default in GKE, kube-dns-autoscaler has "preventSinglePointFailure": true.
+# As soon as Node Auto-Provisioning (NAP) creates a 2nd node, GKE schedules
+# a 2nd replica of kube-dns onto that new node. Because kube-dns has anti-affinity,
+# Cluster Autoscaler cannot evict it, which blocks NAP from deleting the node!
+#
+# Applying this ConfigMap sets "preventSinglePointFailure": false and "min": 1,
+# ensuring kube-dns stays exclusively on the baseline node pool so dynamic
+# NAP nodes can scale down and be deleted cleanly.
+#
+# Applied with:
+#   kubectl apply -f infra/kube-dns-config.yaml
+# ==============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kube-dns-autoscaler
+  namespace: kube-system
+data:
+  linear: '{"coresPerReplica":256,"includeUnschedulableNodes":true,"nodesPerReplica":16,"preventSinglePointFailure":false,"min":1}'

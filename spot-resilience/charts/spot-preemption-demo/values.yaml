@@ -1,0 +1,52 @@
+# ==============================================================================
+# Values for spot-preemption-demo Helm Chart
+# ==============================================================================
+
+replicaCount: 2
+
+image:
+  repository: nginx
+  tag: alpine
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 80
+
+# Google Cloud provides a 25-second notice before shutting down a Spot VM.
+# We set the grace period to 20s to ensure all in-flight connections finish.
+terminationGracePeriodSeconds: 20
+
+# PreStop hook executes immediately when GKE initiates eviction on preemption notice
+preStopCommand:
+  - "/bin/sh"
+  - "-c"
+  - "echo 'PreStop: Spot VM preemption received. Draining connections...' && sleep 10 && nginx -s quit"
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 250m
+    memory: 256Mi
+
+# PodDisruptionBudget configuration
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Topology spread constraints ensure replicas are spread across distinct Spot nodes
+topologySpread:
+  enabled: true
+  maxSkew: 1
+  topologyKey: "kubernetes.io/hostname"
+  whenUnsatisfiable: "ScheduleAnyway"
+
+# Continuous traffic probe to verify zero dropped requests during preemption
+trafficProbe:
+  enabled: true
+  image:
+    repository: curlimages/curl
+    tag: 8.5.0
+  intervalSeconds: 0.2

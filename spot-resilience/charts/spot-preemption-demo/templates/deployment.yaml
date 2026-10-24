@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "spot-preemption-demo.fullname" . }}-web
+  labels:
+    {{- include "spot-preemption-demo.labels" . | nindent 4 }}
+    app.kubernetes.io/component: resilient-web
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "spot-preemption-demo.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: resilient-web
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "spot-preemption-demo.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: resilient-web
+    spec:
+      {{- if .Values.topologySpread.enabled }}
+      topologySpreadConstraints:
+      - maxSkew: {{ .Values.topologySpread.maxSkew }}
+        topologyKey: {{ .Values.topologySpread.topologyKey | quote }}
+        whenUnsatisfiable: {{ .Values.topologySpread.whenUnsatisfiable | quote }}
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: {{ include "spot-preemption-demo.name" . }}
+            app.kubernetes.io/instance: {{ .Release.Name }}
+            app.kubernetes.io/component: resilient-web
+      {{- end }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      containers:
+      - name: web
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.service.port }}
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+        {{- if .Values.preStopCommand }}
+        lifecycle:
+          preStop:
+            exec:
+              command:
+                {{- toYaml .Values.preStopCommand | nindent 16 }}
+        {{- end }}
+        readinessProbe:
+          httpGet:
+            path: /
+            port: {{ .Values.service.port }}
+          initialDelaySeconds: 2
+          periodSeconds: 3
+        livenessProbe:
+          httpGet:
+            path: /
+            port: {{ .Values.service.port }}
+          initialDelaySeconds: 5
+          periodSeconds: 10

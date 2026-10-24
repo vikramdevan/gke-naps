@@ -1,0 +1,16 @@
+# ==============================================================================
+# Pod Disruption Budget for Spot Workload
+#
+# Ensures that Kubernetes never allows voluntary disruption to drop available
+# replicas below 1. When a Spot node is cordoned and drained, the PDB ensures
+# the remaining replica remains alive and healthy to serve traffic.
+# ==============================================================================
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: resilient-web-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: resilient-web

@@ -1,0 +1,55 @@
+# ==============================================================================
+# Continuous Traffic Generator / Probe
+#
+# Continuously curls the resilient-web service at 5 requests/sec and logs
+# HTTP status codes and responses. During Spot VM preemption and pod migration,
+# this probe verifies whether any requests are dropped or fail with 5xx errors.
+# ==============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: traffic-generator
+  labels:
+    app: traffic-generator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: traffic-generator
+  template:
+    metadata:
+      labels:
+        app: traffic-generator
+    spec:
+      containers:
+      - name: curl-probe
+        image: curlimages/curl:8.5.0
+        command:
+        - "sh"
+        - "-c"
+        - |
+          echo "Starting continuous HTTP probe against http://resilient-web..."
+          SUCCESS=0
+          FAIL=0
+          TOTAL=0
+          while true; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 --max-time 3 http://resilient-web || echo "ERR")
+            TOTAL=$((TOTAL + 1))
+            if [ "$HTTP_CODE" = "200" ]; then
+              SUCCESS=$((SUCCESS + 1))
+              if [ $((TOTAL % 25)) -eq 0 ]; then
+                echo "[PROBE] Total: $TOTAL | Success (200 OK): $SUCCESS | Failures: $FAIL"
+              fi
+            else
+              FAIL=$((FAIL + 1))
+              echo "[PROBE WARNING] Request failed! HTTP Code: $HTTP_CODE | Total Failed: $FAIL"
+            fi
+            sleep 0.2
+          done
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 100m
+            memory: 128Mi
