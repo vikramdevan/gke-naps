@@ -10,16 +10,19 @@
 
 # Target GCP Project and Location
 --project: "gke-naps"
---zone: "us-central1-c"
+#--zone: "us-central1-a"
+--zone: "us-east1-b"
 
-# Baseline Node Pool (1 Spot VM of e2-standard-2)
-# Saves 60-91% on compute costs for personal test accounts
+# Baseline Node Pool (1 VM of e2-standard-2)
 --num-nodes: 1
 --machine-type: "e2-standard-2"
---spot: true
+#--spot: true
 
 # Node Auto-Provisioning (NAP) Settings
 --enable-autoprovisioning: true
+
+# Autoscaling profile: optimize-utilization reduces scale-down delay from ~10 mins to ~3-5 mins
+--autoscaling-profile: "optimize-utilization"
 
 # Cluster-wide resource limits for auto-provisioned pools (Safety bounds)
 --min-cpu: 1

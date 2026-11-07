@@ -3,7 +3,8 @@ set -euo pipefail
 
 PROJECT_ID="gke-naps"
 CLUSTER_NAME="naps-demo-cluster"
-ZONE="us-central1-c"
+#ZONE="us-central1-c"
+ZONE="us-east1-b"
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 HELM_CHART="${DIR}/charts/gke-naps-demo"
 

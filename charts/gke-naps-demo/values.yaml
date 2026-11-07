@@ -73,10 +73,9 @@ spotWorkload:
   enabled: false
   replicaCount: 1
   image:
-    repository: busybox
-    tag: "1.36"
+    repository: nginx
+    tag: alpine
     pullPolicy: IfNotPresent
-  command: ["sh", "-c", "echo 'Running on a dynamically created Spot node pool!'; sleep 3600"]
   resources:
     requests:
       cpu: 500m

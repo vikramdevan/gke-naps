@@ -77,6 +77,9 @@ Used with `gcloud container clusters create naps-demo-cluster --flags-file=infra
 # Node Auto-Provisioning (NAP) Settings
 --enable-autoprovisioning: true
 
+# Autoscaling profile: optimize-utilization reduces scale-down delay from ~10 mins to ~3-5 mins
+--autoscaling-profile: "optimize-utilization"
+
 # Cluster-wide resource limits for auto-provisioned pools
 --min-cpu: 1
 --max-cpu: 8
@@ -331,6 +334,23 @@ kubectl get pods -n kube-system -l k8s-app=kube-dns -o wide
 2. **Drain the node to evict any lingering system replicas:**
    ```bash
    kubectl drain <NAP_NODE_NAME> --delete-emptydir-data --ignore-daemonsets --force
+   ```
+
+3. **Speed Up Node Pool Deletion:**
+   By default, GKE waits **10–12 minutes** (`balanced` profile) before deleting empty dynamic nodes. To reduce this cooldown to **~3–5 minutes**, set the cluster autoscaling profile to `optimize-utilization`:
+   ```bash
+   gcloud container clusters update naps-demo-cluster \
+       --zone=us-east1-b \
+       --autoscaling-profile=optimize-utilization
+   ```
+   *(Or declare `--autoscaling-profile: "optimize-utilization"` in `infra/cluster-config.yaml`).*
+
+   For **instant deletion** without waiting for any cooldown:
+   ```bash
+   gcloud container node-pools delete <NAP_POOL_NAME> \
+       --cluster=naps-demo-cluster \
+       --zone=us-east1-b \
+       --quiet
    ```
 
 ---

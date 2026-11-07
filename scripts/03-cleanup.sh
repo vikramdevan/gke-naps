@@ -3,7 +3,8 @@ set -euo pipefail
 
 PROJECT_ID="gke-naps"
 CLUSTER_NAME="naps-demo-cluster"
-ZONE="us-central1-c"
+#ZONE="us-central1-c"
+ZONE="us-east1-b"
 
 echo "=========================================================="
 echo " Cleanup GKE Node Auto-Provisioning Resources"

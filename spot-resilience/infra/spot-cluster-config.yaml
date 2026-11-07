@@ -21,6 +21,7 @@
 --enable-autoscaling: true
 --min-nodes: 2
 --max-nodes: 4
+--autoscaling-profile: "optimize-utilization"
 
 # API scopes
 --scopes:

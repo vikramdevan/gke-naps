@@ -23,8 +23,7 @@ spec:
         effect: "NoSchedule"
       containers:
       - name: spot-worker
-        image: busybox:1.36
-        command: ["sh", "-c", "echo 'Running on a Spot VM node pool created by NAP!'; sleep 3600"]
+        image: nginx:alpine
         resources:
           requests:
             cpu: "500m"
@@ -32,3 +31,5 @@ spec:
           limits:
             cpu: "500m"
             memory: "512Mi"
+        ports:
+        - containerPort: 80

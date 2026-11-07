@@ -6,7 +6,8 @@ CONFIG_FILE="${DIR}/infra/cluster-config.yaml"
 DNS_CONFIG_FILE="${DIR}/infra/kube-dns-config.yaml"
 CLUSTER_NAME="naps-demo-cluster"
 PROJECT_ID="gke-naps"
-ZONE="us-central1-a"
+#ZONE="us-central1-a"
+ZONE="us-east1-b"
 
 echo "=================================================="
 echo " Provisioning GKE Infrastructure from YAML Spec"
@@ -21,8 +22,13 @@ echo ""
 echo ">>> Checking if cluster already exists..."
 if gcloud container clusters describe "${CLUSTER_NAME}" --zone="${ZONE}" --project="${PROJECT_ID}" >/dev/null 2>&1; then
     echo "Cluster '${CLUSTER_NAME}' already exists."
+    echo "Ensuring autoscaling-profile is set to optimize-utilization for faster scale-down..."
+    gcloud container clusters update "${CLUSTER_NAME}" \
+        --zone="${ZONE}" \
+        --project="${PROJECT_ID}" \
+        --autoscaling-profile=optimize-utilization || true
 else
-    echo ">>> Creating GKE cluster using declarative YAML configuration..."
+    echo ">>> Creating GKE cluster using declarative YAML configuration (optimize-utilization enabled)..."
     gcloud container clusters create "${CLUSTER_NAME}" \
         --flags-file="${CONFIG_FILE}"
 fi
