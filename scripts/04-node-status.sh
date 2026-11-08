@@ -2,8 +2,9 @@
 # ==============================================================================
 # Script Name: cluster-inspect.sh
 # Description: Displays GKE/Kubernetes cluster configuration, NAP settings, 
-#              node pools, node specs (resources, taints, spot status), and 
-#              pods specifically in the 'default' namespace grouped by node.
+#              node pools, node specs (resources, taints, spot status), 
+#              pods in 'default' namespace grouped by node, and 
+#              an overall pod status overview (including unscheduled pods).
 # ==============================================================================
 
 set -eo pipefail
@@ -135,5 +136,23 @@ for node in $NODES; do
     fi
     echo ""
 done
+
+# ------------------------------------------------------------------------------
+# 5. ALL PODS STATUS OVERVIEW (Linked to Nodes or Unscheduled)
+# ------------------------------------------------------------------------------
+print_header "5. ALL PODS STATUS OVERVIEW"
+
+print_subheader "Pods in 'default' Namespace (with Assigned Node & Readiness)"
+kubectl get pods -n default -o custom-columns='NAMESPACE:.metadata.namespace,NAME:.metadata.name,READY:.status.containerStatuses[*].ready,STATUS:.status.phase,NODE:.spec.nodeName,AGE:.metadata.creationTimestamp' 2>/dev/null || echo "(No pods found in default namespace)"
+
+# Check for unscheduled/pending workload pods (excluding kube-system)
+PENDING_PODS=$(kubectl get pods -A --field-selector="status.phase=Pending" --no-headers 2>/dev/null | grep -v "^kube-system " || true)
+if [ -n "$PENDING_PODS" ]; then
+    print_subheader "Pending / Unassigned Workload Pods (Awaiting Nodes / NAP Provisioning)"
+    kubectl get pods -A --field-selector="status.phase=Pending" -o custom-columns='NAMESPACE:.metadata.namespace,NAME:.metadata.name,STATUS:.status.phase,NODE:.spec.nodeName,REASON:.status.conditions[?(@.type=="PodScheduled")].message' 2>/dev/null | grep -v "^kube-system "
+else
+    print_subheader "Unscheduled Workload Pods Check"
+    echo "All user workload pods are currently scheduled onto nodes (kube-system excluded)."
+fi
 
 print_header "Inspection Complete"

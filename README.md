@@ -55,7 +55,10 @@ Understanding how GKE handles the lifecycle of different node pools is crucial w
 └── scripts/
     ├── 01-create-cluster.sh        # Provisions GKE cluster using infra/cluster-config.yaml & infra/kube-dns-config.yaml
     ├── 02-run-demo.sh              # Runs the end-to-end Helm demo
-    └── 03-cleanup.sh              # Uninstalls Helm chart & destroys cluster
+    ├── 03-cleanup.sh               # Uninstalls Helm chart & destroys cluster
+    ├── 04-node-status.sh           # Inspects NAP cluster, nodes, and pod assignment status
+    ├── 05-dashboard-tmux.sh        # Live multi-pane dashboard (independent section updates)
+    └── 06-toggle-workload.sh       # Toggle NAP demo workloads via flags (--cpu or --spot)
 ```
 
 ---
